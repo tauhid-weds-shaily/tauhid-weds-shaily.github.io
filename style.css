@@ -440,11 +440,12 @@ section { padding: 5.5rem 0; text-align: center; }
   font-feature-settings: "lnum" 1, "tnum" 1;
 }
 
-.cd-num.tick { animation: num-tick 0.45s ease-out; }
+.cd-num.tick { animation: num-tick 0.5s ease-out; }
 
+/* soft crossfade only — no movement, so the countdown never shakes */
 @keyframes num-tick {
-  0%   { opacity: 0.25; transform: translateY(0.16em); }
-  100% { opacity: 1; transform: none; }
+  0%   { opacity: 0.35; }
+  100% { opacity: 1; }
 }
 
 .cd-label {
