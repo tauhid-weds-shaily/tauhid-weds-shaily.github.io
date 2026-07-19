@@ -110,7 +110,7 @@ let dustStarted = false;
   // Dev/preview shortcut: #peek skips the intro and shows everything at once
   // (useful while designing; guests never see this). #peek2 also jumps to
   // section index 2, etc.
-  const peek = location.hash.match(/^#peek(\d+)?$/);
+  const peek = location.hash.match(/^#peek(\d+)?(?:live|after)?$/);
   if (peek) {
     open();
     document.querySelectorAll(".reveal").forEach((el) => {
@@ -165,18 +165,34 @@ function initReveals() {
   );
 }
 
-/* ---------- Countdown ---------- */
+/* ---------- Countdown + wedding-day states ----------
+   before → countdown ticking
+   during → "our wedding is underway" (start … start + WEDDING_LIVE_HOURS)
+   after  → gratitude state (venue section hidden, closing becomes a thank-you)
+   Preview locally: add "live" or "after" to the URL hash to force a state,
+   e.g. #peeklive or #peekafter — guests never see these. */
+const WEDDING_LIVE_HOURS = 6;
+
 (function initCountdown() {
-  const target = new Date(WEDDING_ISO).getTime();
+  const start = new Date(WEDDING_ISO).getTime();
+  const liveMs = WEDDING_LIVE_HOURS * 3600000;
   const dayMs = 24 * 60 * 60 * 1000;
+
+  const FORCED = /live/.test(location.hash) ? "during"
+               : /after/.test(location.hash) ? "after"
+               : null;
+
+  const blocks = {
+    before: document.getElementById("cd-before"),
+    during: document.getElementById("cd-during"),
+    after: document.getElementById("cd-after")
+  };
 
   const els = {
     days: document.getElementById("cd-days"),
     hours: document.getElementById("cd-hours"),
     mins: document.getElementById("cd-mins"),
-    secs: document.getElementById("cd-secs"),
-    grid: document.getElementById("countdown"),
-    today: document.getElementById("countdown-today")
+    secs: document.getElementById("cd-secs")
   };
 
   const pad = (n) => String(n).padStart(2, "0");
@@ -193,18 +209,41 @@ function initReveals() {
     }
   }
 
-  function tick() {
-    const diff = target - Date.now();
+  function currentState() {
+    if (FORCED) return FORCED;
+    const now = Date.now();
+    if (now < start) return "before";
+    if (now < start + liveMs) return "during";
+    return "after";
+  }
 
-    if (diff <= 0) {
-      els.grid.hidden = true;
-      els.today.hidden = false;
-      els.today.textContent =
-        diff > -dayMs ? "Today is the day." : "Married — 8 January 2027";
+  let shown = null;
+
+  function applyState(state) {
+    if (state === shown) return;
+    shown = state;
+
+    for (const key in blocks) blocks[key].hidden = key !== state;
+    document.body.classList.toggle("post-wedding", state === "after");
+
+    if (state === "after") {
+      document.getElementById("closing-line").innerHTML =
+        "Thank you for your presence, your love, and your blessings —<br>" +
+        "you made our day complete.<br>" +
+        "Keep us in your prayers as we begin this journey together.";
+    }
+  }
+
+  function tick() {
+    const state = currentState();
+    applyState(state);
+
+    if (state !== "before") {
       clearInterval(timer);
       return;
     }
 
+    const diff = start - Date.now();
     setNum(els.days, Math.floor(diff / dayMs));
     setNum(els.hours, pad(Math.floor((diff % dayMs) / 3600000)));
     setNum(els.mins, pad(Math.floor((diff % 3600000) / 60000)));
