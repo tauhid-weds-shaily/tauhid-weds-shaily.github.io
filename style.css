@@ -289,10 +289,6 @@ section { padding: 5.5rem 0; text-align: center; }
   white-space: nowrap;
 }
 
-.names .n-first { align-self: flex-start; }
-
-.names .n-second { align-self: flex-end; }
-
 .names .amp {
   font-family: var(--script);
   font-weight: 400;
