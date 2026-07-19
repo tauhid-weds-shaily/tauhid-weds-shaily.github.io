@@ -149,6 +149,20 @@ function initReveals() {
   );
 
   els.forEach((el) => io.observe(el));
+
+  // Safety net: elements at the very end of the page can sit entirely
+  // inside the observer's bottom margin and never fire — reveal all
+  // remaining elements once the page is scrolled to the bottom.
+  window.addEventListener(
+    "scroll",
+    function revealAtEnd() {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 60) {
+        els.forEach((el) => el.classList.add("in"));
+        window.removeEventListener("scroll", revealAtEnd);
+      }
+    },
+    { passive: true }
+  );
 }
 
 /* ---------- Countdown ---------- */
